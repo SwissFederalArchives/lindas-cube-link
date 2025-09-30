@@ -1,0 +1,71 @@
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX meta: <https://cube.link/meta/>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX schema: <http://schema.org/>
+PREFIX cube: <https://cube.link/>
+PREFIX ex: <http://example.org/>
+
+# Test cube with dimensions using sh:or pattern for cube:Undefined
+
+ex:Cube
+    a cube:Cube ;
+    cube:observationSet ex:ObsSet ;
+    cube:observationConstraint ex:Constraint ;
+    schema:name "Test Cube"@en ;
+    schema:publisher <publisher> ;
+    schema:creator <creator> ;
+    schema:contributor <contributor> ;
+    schema:workExample <https://ld.admin.ch/application/visualize> ;
+    schema:creativeWorkStatus <https://ld.admin.ch/vocabulary/CreativeWorkStatus/Published> ;
+    schema:dateCreated "2020-10-10"^^xsd:date ;
+    schema:dateModified "2020-10-10"^^xsd:date ;
+    schema:datePublished "2020-11-11"^^xsd:date ;
+    schema:contactPoint [
+        schema:name "John Doe" ;
+        schema:email "john@doe.tech" ;
+    ] .
+
+ex:ObsSet cube:observation ex:Obs1, ex:Obs2 .
+
+ex:Obs1
+    a cube:Observation ;
+    cube:observedBy <observer> ;
+    ex:temperature 25.5 ;
+    ex:region <Zurich> .
+
+ex:Obs2
+    a cube:Observation ;
+    cube:observedBy <observer> ;
+    ex:temperature ""^^cube:Undefined ;
+    ex:region cube:Undefined .
+
+# This constraint uses sh:or for temperature (our fix allows this)
+ex:Constraint
+    a cube:Constraint ;
+    sh:closed true ;
+    sh:property [
+        sh:path rdf:type ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    sh:property [
+        sh:path cube:observedBy ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    sh:property [
+        schema:name "Temperature" ;
+        sh:path ex:temperature ;
+        sh:or (
+            [ sh:datatype xsd:decimal ]
+            [ sh:datatype cube:Undefined ]
+        ) ;
+        qudt:scaleType qudt:RatioScale ;
+    ] ;
+    sh:property [
+        schema:name "Region" ;
+        sh:path ex:region ;
+        sh:nodeKind sh:IRI ;
+        sh:in ( cube:Undefined <Zurich> <Bern> <Basel> ) ;
+        qudt:scaleType qudt:NominalScale ;
+    ] .

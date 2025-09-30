@@ -1,0 +1,46 @@
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX meta: <https://cube.link/meta/>
+PREFIX time: <http://www.w3.org/2006/time#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX schema: <http://schema.org/>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+prefix code: <https://code.described.at/>
+prefix cube: <https://cube.link/>
+prefix : <https://cube.link/shape/profile-visualize#>
+
+[
+    code:imports <./standalone-cube-constraint> ;
+    code:extension "ttl" ;
+] .
+[
+    code:imports <./shared/data-kind> ;
+    code:extension "ttl" ;
+] .
+
+:ObservationConstraintShape
+    a sh:NodeShape ;
+    sh:targetClass cube:Constraint ;
+    sh:property [
+        sh:path sh:property ;
+        sh:or (
+            [ sh:node :ObservationConstraintNodeKindProperty ; ]
+            [ sh:node :ObservationConstraintCoreProperty ; ]
+        ) ;
+        sh:message "Dimension must have exactly one nodeKind: sh:IRI or sh:Literal" ;
+    ] .
+
+:ObservationConstraintNodeKindProperty
+    sh:property [
+        sh:path sh:nodeKind ;
+        sh:in ( sh:IRI sh:Literal ) ;
+        sh:minCount 1 ;
+    ] .
+
+:ObservationConstraintCoreProperty
+    sh:property [
+        sh:path sh:path ;
+        sh:in ( rdf:type cube:observedBy )
+    ] .
