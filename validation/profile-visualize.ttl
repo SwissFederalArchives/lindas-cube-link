@@ -1,3 +1,23 @@
+# ============================================================================
+# Visualize.admin.ch Profile - SHACL Validation Shapes
+# ============================================================================
+#
+# This profile defines SHACL validation shapes specifically for cubes
+# published on visualize.admin.ch, the official Swiss government data
+# visualization platform.
+#
+# This profile extends the standalone-cube-constraint profile and adds
+# additional requirements specific to the visualize.admin.ch environment:
+#   - Mandatory cube names in multiple languages
+#   - Publication status tracking (Published/Draft)
+#   - Strict dimension constraints with scale types
+#   - Temporal dimension validation for time-based data
+#   - Data kind specifications for all dimensions
+#
+# Profile extends: standalone-cube-constraint
+# Related imports: shared/data-kind
+# ============================================================================
+
 PREFIX qudt: <http://qudt.org/schema/qudt/>
 PREFIX meta: <https://cube.link/meta/>
 PREFIX time: <http://www.w3.org/2006/time#>
@@ -11,35 +31,61 @@ prefix code: <https://code.described.at/>
 prefix cube: <https://cube.link/>
 prefix : <https://cube.link/shape/profile-visualize#>
 
+# Import the base standalone cube constraint profile
 [
     code:imports <./standalone-cube-constraint> ;
     code:extension "ttl" ;
 ] .
+
+# Import shared data kind validation rules
 [
     code:imports <./shared/data-kind> ;
     code:extension "ttl" ;
 ] .
 
+# ============================================================================
+# Cube Shape
+# ============================================================================
+# Main validation shape for cubes in the visualize.admin.ch profile.
+# Validates cube-level metadata including names, publication status,
+# and observation constraints.
+# ============================================================================
+
 :CubeShape
     a sh:NodeShape ;
     sh:targetClass cube:Cube ;
     sh:property
+        # Observation constraint validation
+        # Every cube must have exactly one observation constraint defining
+        # the structure and validation rules for its observations
         [
             sh:path cube:observationConstraint ;
             sh:node :ObservationConstraintShape ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
+            sh:message "VIOLATION: Cube must have exactly one observation constraint that defines the structure of its observations." ;
         ],
+        # Cube name validation
+        # Names must be language-tagged strings to support multilingual display
+        # in the visualize.admin.ch interface
         [
             sh:path schema:name ;
             sh:minCount 1 ;
             sh:datatype rdf:langString ;
+            sh:message "VIOLATION: Cube must have at least one name as a language-tagged string (e.g., 'Population'@en, 'Population'@de)." ;
         ],
+        # Work example annotation
+        # Cubes should be tagged with the visualize application for proper
+        # discovery and filtering in the platform
         [
             sh:path schema:workExample ;
             sh:hasValue <https://ld.admin.ch/application/visualize> ;
             sh:severity sh:Warning ;
+            sh:message "WARNING: Cube should reference the visualize application (https://ld.admin.ch/application/visualize) to appear in the platform." ;
         ],
+        # Publication status validation
+        # Cubes must be explicitly marked as Published or Draft to control
+        # their visibility in the visualize.admin.ch interface
         [
             sh:path schema:creativeWorkStatus ;
             sh:minCount 1 ;
@@ -48,19 +94,39 @@ prefix : <https://cube.link/shape/profile-visualize#>
                     <https://ld.admin.ch/vocabulary/CreativeWorkStatus/Published>
                     <https://ld.admin.ch/vocabulary/CreativeWorkStatus/Draft>
                 ) ;
+            sh:message "VIOLATION: Cube must have a creative work status of either 'Published' or 'Draft' to control its visibility in visualize.admin.ch." ;
         ],
+        # Expiration validation
+        # Cubes in visualize.admin.ch cannot be marked as expired
+        # They should be either Published or Draft
         [
             sh:path [ sh:alternativePath ( schema:validThrough schema:expires ) ] ;
             sh:maxCount 0 ;
-            sh:message "VIOLATION: Cube cannot be expired" ;
+            sh:message "VIOLATION: Cube cannot have expiration dates (schema:validThrough or schema:expires). Use creative work status 'Draft' instead to hide cubes." ;
         ] ;
 .
 
+
+# ============================================================================
+# Observation Constraint Shape
+# ============================================================================
+# Validates the observation constraint structure for cubes in visualize.admin.ch.
+# This shape ensures that all dimensions have proper datatypes, node kinds,
+# and scale types required for visualization purposes.
+#
+# The visualize.admin.ch profile requires strict dimension specifications:
+# - Each dimension must have a single, well-defined datatype (except core properties)
+# - Each dimension must declare whether it contains IRIs or Literals
+# - Each dimension must specify its statistical scale type for proper chart rendering
+# ============================================================================
 
 :ObservationConstraintShape
     a sh:NodeShape ;
     sh:targetClass cube:Constraint ;
     sh:property
+        # Datatype validation
+        # Dimensions must have exactly one datatype and cannot use language-tagged strings
+        # (except for core properties like rdf:type and cube:observedBy)
         [
             sh:path sh:property ;
             sh:or
@@ -72,8 +138,11 @@ prefix : <https://cube.link/shape/profile-visualize#>
                         sh:node :ObservationConstraintCoreProperty ;
                     ]
                 ) ;
-            sh:message "VIOLATION: Dimension constraint must have exactly one datatype. It cannot be rdf:langString"
+            sh:message "VIOLATION: Each dimension must have exactly one datatype specified (e.g., xsd:string, xsd:decimal). Language-tagged strings (rdf:langString) are not allowed. Core properties (rdf:type, cube:observedBy) are exempt from this requirement."
         ],
+        # Node kind validation
+        # Dimensions must explicitly declare whether values are IRIs or Literals
+        # This is required for proper query optimization and visualization
         [
             sh:path sh:property ;
             sh:or
@@ -88,8 +157,11 @@ prefix : <https://cube.link/shape/profile-visualize#>
                         sh:node :ObservationConstraintCoreProperty ;
                     ]
                 ) ;
-            sh:message "VIOLATION: Dimension must have exactly one nodeKind (sh:IRI or sh:Literal) or use sh:or with datatypes" ;
+            sh:message "VIOLATION: Each dimension must specify exactly one node kind (sh:IRI for URI references or sh:Literal for data values), or use sh:or to define multiple datatype options. Core properties (rdf:type, cube:observedBy) are exempt from this requirement." ;
         ],
+        # Scale type validation
+        # All dimensions must declare their statistical scale type for visualization
+        # Scale types determine what chart types can be used (e.g., bar, line, pie)
         [
             sh:path sh:property ;
             sh:or
@@ -102,20 +174,38 @@ prefix : <https://cube.link/shape/profile-visualize#>
                     ]
                 ) ;
             sh:message
-                "VIOLATION: Dimension must have exactly one scaleType: qudt:IntervalScale, qudt:NominalScale, qudt:RatioScale, or qudt:OrdinalScale" ;
+                "VIOLATION: Each dimension must specify exactly one scale type: qudt:NominalScale (categories without order), qudt:OrdinalScale (categories with order), qudt:IntervalScale (numeric with arbitrary zero), or qudt:RatioScale (numeric with meaningful zero). Scale types determine valid visualization types in visualize.admin.ch. Core properties (rdf:type, cube:observedBy) are exempt from this requirement." ;
         ]
 .
+
+# ============================================================================
+# Key Dimension Shape In Constraint
+# ============================================================================
+# Validates that key dimensions with nominal or ordinal scale types include
+# a list of all possible values for performance optimization in visualize.admin.ch.
+#
+# This optimization allows the visualization platform to:
+# - Pre-populate filter dropdowns without additional SPARQL queries
+# - Validate dimension values against allowed values
+# - Improve query performance by using value lists
+#
+# For categorical dimensions (Nominal/Ordinal), providing sh:in with all
+# possible values significantly improves performance. For numeric dimensions
+# (Ratio/Interval), this is not required as they typically have continuous ranges.
+# ============================================================================
 
 :KeyDimensionShInConstraint
     a sh:NodeShape ;
     sh:targetClass cube:KeyDimension ;
     sh:severity sh:Info ;
-    sh:message "INFO: For performance reason, add list of occurring elements to nominal and ordinal Key Dimensions" ;
+    sh:message "INFO: For optimal performance in visualize.admin.ch, provide a list of all possible values (using sh:in) for nominal and ordinal key dimensions. This enables faster filtering and better user experience. Numeric dimensions (ratio/interval scales) do not require this optimization." ;
     sh:xone
         (
+            # Core properties (rdf:type, cube:observedBy) are exempt
             [
                 sh:node :ObservationConstraintCoreProperty ;
             ]
+            # Nominal and ordinal dimensions should have sh:in value lists
             [
                 sh:node
                     [
@@ -131,6 +221,7 @@ prefix : <https://cube.link/shape/profile-visualize#>
                             ] ;
                     ]
             ]
+            # Ratio and interval dimensions don't require sh:in lists
             [
                 sh:node
                     [
@@ -144,6 +235,15 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ) ;
 .
 
+# ============================================================================
+# Helper Shapes for Observation Constraint Validation
+# ============================================================================
+# These shapes are used internally by ObservationConstraintShape to validate
+# different aspects of dimension constraints.
+# ============================================================================
+
+# Node Kind Property Shape
+# Validates that dimensions specify whether they contain IRIs or Literals
 :ObservationConstraintNodeKindProperty
     sh:property
         [
@@ -153,6 +253,8 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ] ;
 .
 
+# Scale Type Property Shape
+# Validates that dimensions specify their statistical measurement scale
 :ObservationConstraintScaleTypeProperty
     sh:property
         [
@@ -163,6 +265,8 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ] ;
 .
 
+# Datatype Property Shape
+# Validates that dimensions have a single datatype (not language-tagged strings)
 :ObservationConstraintDatatypeProperty
     sh:property
         [
@@ -172,6 +276,9 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ] ;
 .
 
+# Core Property Shape
+# Identifies core cube properties (rdf:type, cube:observedBy) that are
+# exempt from certain validation requirements
 :ObservationConstraintCoreProperty
     sh:property
         [
@@ -180,6 +287,8 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ] ;
 .
 
+# Or Datatype Property Shape
+# Validates dimensions that use sh:or to define multiple allowed datatypes
 :ObservationConstraintOrDatatypeProperty
     sh:property
         [
@@ -188,13 +297,38 @@ prefix : <https://cube.link/shape/profile-visualize#>
         ] ;
 .
 
+# ============================================================================
+# Temporal Dimension Constraint
+# ============================================================================
+# Validates temporal dimensions (time-based dimensions) in cubes for
+# visualize.admin.ch. This constraint ensures that time dimensions are
+# properly specified using one of three approaches:
+#
+# 1. Standard XSD date/time datatypes (gYear, gYearMonth, date, dateTime)
+#    - These are the most common and recommended for time dimensions
+#    - Example: 2023, 2023-06, 2023-06-15, 2023-06-15T10:30:00
+#
+# 2. Custom time units via time:unitType
+#    - For non-standard temporal granularities (e.g., quarters, decades)
+#    - Allows flexibility for domain-specific time representations
+#
+# 3. Ordinal scale type for temporal sequences
+#    - For ordered categorical time periods without standard intervals
+#    - Example: "Early Bronze Age", "Middle Ages", etc.
+#
+# This validation uses sh:xone to ensure exactly ONE of these approaches
+# is used per temporal dimension (they cannot be mixed).
+# ============================================================================
+
 :TemporalDimensionConstraint
     a sh:NodeShape ;
     sh:targetClass time:GeneralDateTimeDescription ;
     sh:message
-        "VIOLATION: Temporal dimension must be one of XSD datatypes: gYear, gYearMonth, date, dateTime, or have time:unitType, or have an ordinal scaleType" ;
+        "VIOLATION: Temporal dimension must use exactly one of three approaches: (1) a standard XSD date/time datatype (xsd:gYear, xsd:gYearMonth, xsd:date, or xsd:dateTime), (2) a custom time:unitType for non-standard temporal granularities, or (3) an ordinal scale type for ordered categorical time periods. These approaches cannot be mixed." ;
     sh:xone
         (
+            # Option 1: Standard XSD date/time datatypes
+            # Most common approach - uses built-in XSD types for dates and times
             [
                 sh:property
                     [
@@ -207,6 +341,8 @@ prefix : <https://cube.link/shape/profile-visualize#>
                         sh:maxCount 0 ;
                     ]
             ]
+            # Option 2: Custom time unit specification
+            # For non-standard temporal granularities (quarters, decades, etc.)
             [
                 sh:property
                     [
@@ -215,6 +351,8 @@ prefix : <https://cube.link/shape/profile-visualize#>
                         sh:maxCount 1 ;
                     ] ;
             ]
+            # Option 3: Ordinal scale for temporal sequences
+            # For ordered categorical time periods without standard intervals
             [
                 sh:property
                     [
