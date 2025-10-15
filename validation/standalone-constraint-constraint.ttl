@@ -13,85 +13,125 @@
 @prefix relation: <https://cube.link/relation/> .
 
 #
-# This is the bare minimal SHACL shape for validating a Cube Constraint.
-# All Cube Constraints should pass this validation.
+# Standalone Constraint Validation Shape
+#
+# This SHACL shape validates cube:Constraint objects, which define the dimensions
+# and observation constraints for RDF Data Cubes. A cube:Constraint describes the
+# structure of observations, including dimension properties, their datatypes, names,
+# and relationships. This is the minimal validation that all cube constraints must pass.
+#
+# Key validations include:
+# - Presence of required properties (sh:path, schema:name, datatype/nodeKind)
+# - Proper RDF list construction for sh:in and sh:or constraints
+# - Dimension relationships and hierarchies
+# - Annotations and their contexts
+# - Deprecated property usage warnings
+#
+# This shape ensures that constraint definitions are well-formed and contain
+# sufficient metadata for both validation and visualization purposes.
 #
 
+# Main constraint shape that validates cube:Constraint objects
+# A cube:Constraint defines the structure and validation rules for observations in a data cube
 :ObservationConstraintShape
     a sh:NodeShape ;
     sh:targetClass cube:Constraint ;
+
+    # Minimum property count validation
+    # A constraint must have at least 3 properties: cube:observedBy, rdf:type, and at least one dimension
     sh:property [
-        # we assume at least 3 dimensions, otherwise we would have an empty list of dimensions
-        # one for cube:observedBy, one for rdf:type and at least one cube dimension
         sh:path sh:property ;
         sh:minCount 3 ;
-        sh:message "VIOLATION: cube:Constraint needs at least a certain amount of sh:properties"
+        sh:message "VIOLATION: Each cube:Constraint must define at least 3 properties: cube:observedBy, rdf:type, and at least one dimension property. Expected at least 3 sh:property definitions." ;
     ] ;
-    sh:property
-        [
-            sh:path sh:property ;
-            sh:node :PropertyPath ;
-            sh:message "VIOLATION: a sh:path is needed on a property" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyWithName ;
-            sh:message "VIOLATION: needs a schema:name" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyNameType ;
-            sh:message "VIOLATION: schema:name needs to be a xsd:string or a rdf:langString" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyWithType ;
-            sh:message "VIOLATION: needs a sh:datatype, sh:nodeKind or sh:datatype within sh:or (...)" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyScaleType ;
-            sh:message "VIOLATION: If qudt:scaleType is used it needs to be within ( qudt:IntervalScale qudt:NominalScale qudt:EnumerationScale qudt:RatioScale qudt:OrdinalScale )" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyRange ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :PropertyInList ;
-            sh:message "VIOLATION: sh:in needs to be a list" ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:node :DimensionRelation ;
-        ] ,
-        [
-            sh:path sh:property ;
-            sh:or (
-                      [
-                          sh:path qudt:unit ;
-                          sh:equals qudt:hasUnit ;
-                      ]
-                      [
-                          sh:path qudt:unit ;
-                          sh:maxCount 0 ;
-                      ]
-                  ) ;
-            sh:severity sh:Warning ;
-            sh:message "WARNING: The use of qudt:unit is deprecated, please use qudt:hasUnit instead" ;
-        ] ;
-	sh:property [
+
+    # Validate that each property has a proper sh:path defined
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyPath ;
+        sh:message "VIOLATION: Every dimension property within the constraint must have exactly one sh:path defined to specify which RDF property it validates." ;
+    ] ;
+
+    # Validate that each property has a human-readable name
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyWithName ;
+        sh:message "VIOLATION: Every dimension property must have a schema:name for human-readable labels, except for rdf:type and cube:observedBy which are system properties." ;
+    ] ;
+
+    # Validate the datatype of schema:name
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyNameType ;
+        sh:message "VIOLATION: The schema:name property must be either xsd:string or rdf:langString to provide language-tagged labels. Other datatypes are not allowed." ;
+    ] ;
+
+    # Validate that each property defines a datatype or node kind
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyWithType ;
+        sh:message "VIOLATION: Every dimension property must specify the expected value type using sh:datatype for literals, sh:nodeKind for IRIs, or sh:or containing multiple sh:datatype options for union types." ;
+    ] ;
+
+    # Validate qudt:scaleType when present
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyScaleType ;
+        sh:message "VIOLATION: When qudt:scaleType is used on a dimension property, it must be one of the valid QUDT scale types: qudt:IntervalScale, qudt:NominalScale, qudt:EnumerationScale, qudt:RatioScale, or qudt:OrdinalScale." ;
+    ] ;
+
+    # Validate range constraints
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyRange ;
+    ] ;
+
+    # Validate sh:in list structure
+    sh:property [
+        sh:path sh:property ;
+        sh:node :PropertyInList ;
+        sh:message "VIOLATION: When using sh:in to define allowed values, the value must be a properly constructed RDF list with rdf:first and rdf:rest properties." ;
+    ] ;
+
+    # Validate dimension relationships
+    sh:property [
+        sh:path sh:property ;
+        sh:node :DimensionRelation ;
+    ] ;
+
+    # Deprecated property warning for qudt:unit
+    sh:property [
+        sh:path sh:property ;
+        sh:or (
+            [
+                sh:path qudt:unit ;
+                sh:equals qudt:hasUnit ;
+            ]
+            [
+                sh:path qudt:unit ;
+                sh:maxCount 0 ;
+            ]
+        ) ;
+        sh:severity sh:Warning ;
+        sh:message "WARNING: The property qudt:unit is deprecated in favor of qudt:hasUnit. Please update your constraint definition to use qudt:hasUnit instead for consistency with QUDT vocabulary standards." ;
+    ] ;
+
+    # Validate sh:closed flag
+    sh:property [
         sh:path sh:closed;
         sh:hasValue true;
     ] ;
+
+    # Validate hierarchy definitions
     sh:property [
         sh:path meta:inHierarchy;
         sh:node :Hierarchy;
-        sh:message "VIOLATION: meta:inHierarchy does not validate"
+        sh:message "VIOLATION: When meta:inHierarchy is present, it must reference a valid meta:Hierarchy object with a hierarchyRoot and nextInHierarchy definitions. Expected a properly structured hierarchy definition." ;
     ] ;
     .
 
+# Validates that each dimension property has exactly one sh:path
+# The sh:path specifies which RDF property this constraint applies to
 :PropertyPath a sh:NodeShape ;
     sh:property [
         sh:path sh:path;
@@ -100,6 +140,8 @@
     ] ;
 .
 
+# Validates that dimension properties have human-readable names
+# Exceptions are made for system properties (rdf:type and cube:observedBy)
 :PropertyWithName a sh:NodeShape ;
     sh:or(
         [
@@ -113,6 +155,8 @@
     );
 .
 
+# Validates that schema:name uses appropriate string datatypes
+# Ensures names are either plain strings or language-tagged strings for internationalization
 :PropertyNameType a sh:NodeShape ;
     sh:property [
         sh:path schema:name;
@@ -120,6 +164,11 @@
     ];
 .
 
+# Validates that each dimension property specifies the expected value type
+# Three valid patterns:
+# 1. sh:datatype for literal values (e.g., xsd:integer, xsd:date)
+# 2. sh:nodeKind for IRI/blank node specifications
+# 3. sh:or with a list of datatypes for union types (e.g., string or integer)
 :PropertyWithType a sh:NodeShape ;
     sh:or(
         [
@@ -134,14 +183,17 @@
             sh:path sh:or;
             sh:minCount 1;
             sh:node :listnode ;
+            # Validates that all list elements contain a datatype specification
             sh:property [
-                sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ; # all list elements
-                sh:property [ sh:path sh:datatype ; sh:minCount 1 ] ; # have at least one datatype
+                sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:property [ sh:path sh:datatype ; sh:minCount 1 ] ;
             ]
         ]
     );
 .
 
+# Validates proper structure of sh:in constraints
+# Ensures that sh:in values are properly formed RDF lists
 :PropertyInList a sh:NodeShape ;
     sh:property [
         sh:path sh:in;
@@ -149,6 +201,8 @@
     ];
 .
 
+# Validates QUDT scale type when present on a dimension
+# Restricts scale types to the five standard QUDT measurement scales
 :PropertyScaleType a sh:NodeShape ;
     sh:property [
         sh:path qudt:scaleType;
@@ -157,30 +211,34 @@
     ];
 .
 
+# Validates range constraints for numeric or temporal dimensions
+# Ensures that min/max values are literals and cardinality is exactly 1
 :PropertyRange a sh:NodeShape ;
     sh:property [
         sh:path sh:minInclusive;
         sh:nodeType sh:Literal;
-        sh:message "VIOLATION: sh:minInclusive needs to be a literal"
+        sh:message "VIOLATION: When using sh:minInclusive to define a minimum value range, the value must be a literal (not an IRI or blank node). Expected a numeric or date literal value." ;
     ];
     sh:property [
         sh:path sh:maxInclusive;
         sh:nodeType sh:Literal;
-        sh:message "VIOLATION: sh:maxInclusive needs to be a literal"
+        sh:message "VIOLATION: When using sh:maxInclusive to define a maximum value range, the value must be a literal (not an IRI or blank node). Expected a numeric or date literal value." ;
     ];
     sh:property [
         sh:path sh:minCount;
         sh:hasValue 1 ;
         sh:maxCount 1 ;
-        sh:message "VIOLATION: sh:minCount needs to be 1" ;
+        sh:message "VIOLATION: Dimension properties must have sh:minCount set to exactly 1 to ensure every observation has a value for this dimension. Expected sh:minCount 1." ;
     ] , [
         sh:path sh:maxCount;
         sh:hasValue 1 ;
         sh:maxCount 1 ;
-        sh:message "VIOLATION: sh:maxCount needs to be 1" ;
+        sh:message "VIOLATION: Dimension properties must have sh:maxCount set to exactly 1 to ensure every observation has exactly one value for this dimension. Expected sh:maxCount 1." ;
     ] ;
 .
 
+# Validates dimension relationships for linking related dimensions
+# Used primarily for linking measure dimensions to other dimensions
 :DimensionRelation a sh:NodeShape ;
     sh:property
         [
@@ -190,9 +248,11 @@
                     sh:path meta:relatesTo ;
                     sh:nodeKind sh:IRI ;
                     sh:minCount 1 ;
-                    sh:message "VIOLATION: meta:dimensionRelation requires at least one meta:relatesTo" ;
+                    sh:message "VIOLATION: When using meta:dimensionRelation, at least one meta:relatesTo property must be specified as an IRI. This property links the dimension to another dimension in the cube constraint." ;
                 ],
                 [
+                    # Validates that relatesTo points to an actual dimension in the constraint
+                    # Uses inverse path navigation to verify the target is a property with a cube:Constraint parent
                     sh:path
                         (
                             meta:relatesTo
@@ -201,20 +261,23 @@
                         ) ;
                     sh:minCount 1 ;
                     sh:class cube:Constraint ;
-                    sh:message "VIOLATION: value of meta:relatesTo must be a cube dimension" ;
+                    sh:message "VIOLATION: The value of meta:relatesTo must reference a valid dimension defined in this cube constraint. Expected an IRI that is used as sh:path in another sh:property within the same cube:Constraint." ;
                 ],
                 [
+                    # Ensures the related dimension is specifically a measure dimension
                     sh:path
                         (
                             meta:relatesTo
                             [ sh:inversePath sh:path ]
                         ) ;
                     sh:class cube:MeasureDimension ;
-                    sh:message "VIOLATION: value of meta:relatesTo must point to measure dimension " ;
+                    sh:message "VIOLATION: The value of meta:relatesTo must point to a measure dimension (cube:MeasureDimension). Dimension relationships are used to link metadata to measure dimensions." ;
                 ] ;
     ] ;
 .
 
+# Validates measure dimension annotations
+# Annotations provide additional metadata like min/max values for measures
 :Annotation
     a sh:NodeShape ;
     sh:targetObjectsOf meta:annotation ;
@@ -222,28 +285,32 @@
         [
             sh:path rdf:type ;
             sh:minCount 1 ;
-            sh:message "VIOLATION: annotation needs an rdf:type" ;
+            sh:message "VIOLATION: Every annotation must have an rdf:type specified to indicate what kind of annotation it is. Expected at least one rdf:type property." ;
         ],
         [
             sh:path meta:annotationContext ;
             sh:nodeKind sh:BlankNode ;
         ],
         [
+            # Validates that the annotated object is a measure dimension
             sh:path
                 (
                     [ sh:inversePath meta:annotation ]
                 ) ;
             sh:class cube:MeasureDimension ;
-            sh:message "VIOLATION: annotated dimension must be a cube:MeasureDimension" ;
+            sh:message "VIOLATION: Annotations can only be applied to measure dimensions (cube:MeasureDimension). The annotated dimension must have rdf:type cube:MeasureDimension." ;
         ] ;
 .
 
+# Validates annotation value constraints
+# Ensures annotations have min/max values with correct cardinality
 :AnnotationValue
     a sh:NodeShape ;
     sh:targetObjectsOf meta:annotation ;
-    sh:message "VIOLATION: annotation must have at most one min value and one max value" ;
+    sh:message "VIOLATION: Each annotation must have at least one value (schema:minValue or schema:maxValue) and at most one of each. Expected one or both of these properties with cardinality 0..1." ;
     sh:property
         [
+            # Requires at least one of minValue or maxValue
             sh:path [ sh:alternativePath ( schema:minValue schema:maxValue ) ] ;
             sh:minCount 1 ;
         ] ,
@@ -257,10 +324,13 @@
         ] ;
 .
 
+# Validates annotation context dimension references
+# Ensures annotation contexts reference valid key dimensions
 :AnnotationContextDimensionType
     a sh:NodeShape ;
     sh:targetObjectsOf meta:annotationContext ;
-    sh:message "VIOLATION: annotation context must have exactly one sh:path which is cube's key dimension" ;
+    sh:message "VIOLATION: Annotation context must have exactly one sh:path that references a cube key dimension. The path must match a dimension defined in the constraint and be either a cube:KeyDimension or have nested annotation contexts." ;
+    # Complex validation ensuring the context path doesn't conflict with the measure dimension path
     sh:not
         [
             sh:property
@@ -285,11 +355,13 @@
         ] ;
     sh:property
         [
+            # Validates that the referenced path corresponds to a KeyDimension
             sh:path ( sh:path [ sh:inversePath sh:path ] ) ;
             sh:xone
                 (
                     [ sh:class cube:KeyDimension ]
                     [
+                        # Or has its own annotation context (for nested contexts)
                         sh:property
                             [
                                 sh:path [ sh:inversePath meta:annotationContext ] ;
@@ -300,14 +372,18 @@
         ] ;
 .
 
+# Validates annotation context constraint types
+# Ensures only specific SHACL constraints are used and they don't conflict
 :AnnotationContext
     a sh:NodeShape ;
     sh:targetObjectsOf meta:annotationContext ;
     sh:message
-        "VIOLATION: annotation context only allows constraints sh:hasValue, sh:in, sh:minInclusive, sh:maxInclusive, sh:minExclusive, sh:maxExclusive and they cannot be mixed" ;
+        "VIOLATION: Annotation contexts can only use specific SHACL constraints: sh:hasValue for a single value, sh:in for a list of values, or range constraints (sh:minInclusive, sh:maxInclusive, sh:minExclusive, sh:maxExclusive). Only one type of constraint can be used per context, and range constraints cannot mix inclusive/exclusive for the same bound." ;
+    # Exactly one of three constraint patterns must be used
     sh:xone
         (
             [
+                # Pattern 1: Single value constraint
                 sh:property
                     [
                         sh:path sh:hasValue ;
@@ -317,6 +393,7 @@
                     ] ;
             ]
             [
+                # Pattern 2: List of allowed values
                 sh:property
                     [
                         sh:path sh:in ;
@@ -327,6 +404,7 @@
                     ] ;
             ]
             [
+                # Pattern 3: Range constraints (1 or 2 bounds, not conflicting)
                 sh:property
                     [
                         sh:path [ sh:alternativePath ( sh:maxInclusive sh:maxExclusive sh:minInclusive sh:minExclusive ) ] ;
@@ -345,6 +423,8 @@
         )
 .
 
+# Validates confidence interval annotations
+# Used for statistical confidence bounds on measures
 :Confidence a sh:NodeShape ;
     sh:targetClass relation:ConfidenceLowerBound, relation:ConfidenceUpperBound ;
     sh:property
@@ -354,85 +434,99 @@
         ] ;
 .
 
-# Testing proper rdf:list construction
+# RDF List Validation Shapes
+# These shapes ensure proper construction of RDF lists used in sh:in and sh:or constraints
 
+# Validates that rdf:rest values are either list nodes or rdf:nil
+# This ensures lists are properly terminated
 :restvalue sh:targetObjectsOf rdf:rest ;
-    sh:message "VIOLATION: rdf:rest value must be a list node or rdf:nil";
+    sh:message "VIOLATION: The rdf:rest property in an RDF list must point to either another list node (with rdf:first and rdf:rest) or rdf:nil to terminate the list. Improper list construction will cause validation failures." ;
     sh:xone ([ sh:node :listnode ] [ sh:hasValue rdf:nil ])
 .
 
+# Validates proper RDF list node structure
+# Each list node must have exactly one rdf:first and exactly one rdf:rest
 :listnode sh:targetSubjectsOf rdf:first, rdf:rest ;
     sh:property [ sh:path rdf:first ; sh:minCount 1 ; sh:maxCount 1 ;
-        sh:message "VIOLATION: list node needs exactly one rdf:first" ] ;
+        sh:message "VIOLATION: Every RDF list node must have exactly one rdf:first property containing the list element value. Expected cardinality 1..1." ] ;
     sh:property [ sh:path rdf:rest ; sh:minCount 1 ; sh:maxCount 1 ;
-        sh:message "VIOLATION: list node needs exactly one rdf:rest" ] ;
+        sh:message "VIOLATION: Every RDF list node must have exactly one rdf:rest property pointing to the next list node or rdf:nil. Expected cardinality 1..1." ] ;
     sh:closed true ;
     sh:ignoredProperties (rdf:type) .
 
+# Hierarchy Validation Shapes
+# These shapes validate dimension hierarchies for drill-down/roll-up operations
 
+# Validates inverse path nodes in hierarchy definitions
+# Allows hierarchies to navigate properties in reverse
 :inversepathnode a sh:NodeShape ;
     sh:property [
         sh:path sh:inversePath;
         sh:nodeKind sh:IRI;
         sh:minCount 1;
         sh:maxCount 1;
-        sh:message "VIOLATION: nextInHierarchy requires sh:path to be IRI or [ sh:inversePath ... ]"
+        sh:message "VIOLATION: When using an inverse path in a hierarchy, the sh:inversePath property must contain exactly one IRI representing the property to navigate in reverse. Expected an IRI value for sh:inversePath." ;
     ] .
 
+# Validates hierarchy level definitions
+# Each level in a hierarchy specifies how to navigate to the next level
 :NextInHierarchy a sh:NodeShape ;
     sh:property [
         sh:path sh:path;
         sh:minCount 1;
         sh:maxCount 1;
-        sh:message "VIOLATION: nextInHierarchy requires exactly one sh:path"
+        sh:message "VIOLATION: Each hierarchy level must specify exactly one sh:path indicating the property to follow to the next hierarchy level. Expected exactly one sh:path (either an IRI or an inverse path blank node)." ;
     ],
     [
         sh:path schema:name;
         sh:minCount 1;
-        sh:message "VIOLATION: nextInHierarchy requires schema:name"
+        sh:message "VIOLATION: Each hierarchy level must have a schema:name providing a human-readable label for this level in the hierarchy. Expected at least one schema:name property." ;
     ],
     [
         sh:path sh:targetClass;
         sh:nodeKind sh:IRI;
-        sh:message "VIOLATION: meta:nextInHierarchy/sh:targetClass must be an IRI"
+        sh:message "VIOLATION: When using sh:targetClass in a hierarchy level, it must be an IRI indicating the RDF class of resources at this hierarchy level. Expected an IRI value." ;
     ],
     [
         sh:path meta:nextInHierarchy;
         sh:node :NextInHierarchy ;
         sh:severity sh:Info;
-        sh:message "INFO: nextInHierarchy can have nested nodes"
+        sh:message "INFO: Hierarchy levels can have nested meta:nextInHierarchy properties to define multiple levels of drill-down. This is normal for multi-level hierarchies." ;
     ] ;
+    # The path must be either a direct IRI or an inverse path blank node
     sh:xone (
         [
             sh:path sh:path;
-	        sh:nodeKind sh:IRI;
-            sh:message "VIOLATION: nextInHierarchy requires sh:path to be IRI or [ sh:inversePath ... ]"
+            sh:nodeKind sh:IRI;
+            sh:message "VIOLATION: The sh:path in a hierarchy level must be either an IRI for forward navigation or a blank node with sh:inversePath for reverse navigation. Expected an IRI or inverse path structure." ;
         ]
         [
             sh:path sh:path;
             sh:nodeKind sh:BlankNode;
             sh:node :inversepathnode;
-            sh:message "VIOLATION: nextInHierarchy requires sh:path to be IRI or [ sh:inversePath ... ]"
+            sh:message "VIOLATION: When using a blank node for sh:path in a hierarchy level, it must have an sh:inversePath property. Expected a properly structured inverse path blank node." ;
         ]
     )
     .
 
+# Validates hierarchy definitions
+# A hierarchy defines how dimension values relate in parent-child relationships
 :Hierarchy a sh:NodeShape ;
     sh:targetClass meta:Hierarchy ;
     sh:property [
         sh:path meta:hierarchyRoot;
         sh:minCount 1;
         sh:nodeKind sh:IRI;
-        sh:message "VIOLATION: inHierarchy requires hierarchyRoot";
+        sh:message "VIOLATION: Every hierarchy must specify a meta:hierarchyRoot as an IRI indicating the top-level resource of the hierarchy. Expected at least one IRI value for meta:hierarchyRoot." ;
     ],
     [
         sh:path schema:name;
         sh:minCount 1;
-        sh:message "VIOLATION: inHierarchy requires schema:name"
+        sh:message "VIOLATION: Every hierarchy must have a schema:name providing a human-readable label for the hierarchy. Expected at least one schema:name property." ;
     ],
     [
         sh:path meta:nextInHierarchy;
-	    sh:node :NextInHierarchy;
+        sh:node :NextInHierarchy;
         sh:minCount 1;
-        sh:message "VIOLATION: inHierarchy requires a conform nextInHierarchy"
+        sh:message "VIOLATION: Every hierarchy must define at least one meta:nextInHierarchy level that specifies how to navigate from one level to the next. Expected a valid meta:nextInHierarchy definition." ;
     ] .
