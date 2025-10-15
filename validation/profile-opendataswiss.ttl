@@ -1,3 +1,21 @@
+#
+# OpenData.swiss Profile - DCAT-AP CH SHACL Validation Shapes
+#
+# This SHACL shape file defines validation constraints for RDF Data Cubes published on
+# OpenData.swiss, following the DCAT-AP CH (DCAT Application Profile for Data Portals in
+# Switzerland) standard.
+#
+# This profile extends the standalone-cube-constraint profile and adds comprehensive
+# metadata validation requirements including:
+# - DCAT-AP CH mandatory metadata (publisher, identifier, title, description, contact)
+# - Multilingual property requirements (German, French, Italian, English)
+# - Distribution metadata and access information
+# - Temporal coverage and update frequency
+# - Theme categorization and keywords
+#
+# For more information on DCAT-AP CH, see: https://dcat-ap-switzerland.readthedocs.io/
+#
+
 PREFIX vcard: <http://www.w3.org/2006/vcard/ns#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX prefix: <http://prefix.cc/>
@@ -14,31 +32,47 @@ prefix cube: <https://cube.link/>
 prefix frequency: <http://publications.europa.eu/resource/authority/frequency/>
 prefix : <https://cube.link/shape/profile-opendataswiss#>
 
+# Import the base standalone cube constraint profile
+# This provides fundamental cube structure validation
 [
     code:imports <./standalone-cube-constraint> ;
     code:extension "ttl" ;
 ] .
 
+#
+# Main Cube Shape - DCAT Dataset Validation
+#
+# This shape validates datasets (cubes) published on OpenData.swiss.
+# It enforces DCAT-AP CH requirements for discoverability, accessibility,
+# and interoperability of statistical data.
+#
 :CubeShape
     a sh:NodeShape ;
     sh:targetClass dcat:Dataset ;
     sh:property
+        # Publisher constraint - DCAT-AP CH mandatory field
+        # The publisher must be an organization, either referenced by IRI or defined inline
         [
             sh:path dcterms:publisher ;
             sh:maxCount 1 ;
             sh:minCount 1 ;
-            sh:message "VIOLATION: Publisher must be a foaf:Organization DCAT-AP." ;
+            sh:message "VIOLATION: Dataset must have exactly one publisher. Expected a foaf:Organization either as an IRI reference or as a blank node with foaf:Organization class." ;
             sh:xone
                 (
+                    # Publisher as IRI reference
                     [
                         sh:nodeKind sh:IRI
                     ]
+                    # Publisher as inline blank node organization
                     [
                         sh:nodeKind sh:BlankNode ;
                         sh:class foaf:Organization ;
                     ]
                 )
         ],
+        # Identifier constraint - DCAT-AP CH mandatory field
+        # Format: DATASET_ID@PUBLISHER_ID (case-insensitive alphanumeric with hyphens/underscores)
+        # Example: MY-DATASET-123@SWISS-STATS
         [
             sh:path dcterms:identifier ;
             sh:minCount 1 ;
@@ -46,13 +80,17 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
             sh:datatype xsd:string ;
             sh:pattern "^[A-Z0-9-_]+@[A-Z0-9-_]+$" ;
             sh:flags "i" ;
+            sh:message "VIOLATION: Dataset must have exactly one identifier. Expected format: DATASET_ID@PUBLISHER_ID (alphanumeric characters, hyphens, and underscores only)." ;
         ],
+        # Title and description - multilingual requirements
         :property-title,
         :property-description,
+        # Contact point constraint - DCAT-AP CH mandatory field
+        # Must be either a vcard:Organization or vcard:Individual with name and email
         [
             sh:path dcat:contactPoint ;
             sh:minCount 1 ;
-            sh:message "VIOLATION: Contact point must be a vcard:Organization or vcard:Individual." ;
+            sh:message "VIOLATION: Dataset must have at least one contact point. Expected a blank node with vcard:Organization or vcard:Individual class, including name (vcard:fn) and email (vcard:hasEmail)." ;
             sh:nodeKind sh:BlankNode ;
             sh:node :shape-contactPoint ;
             sh:or
@@ -65,17 +103,26 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
                     ]
                 )
         ],
+        # Distribution constraint - DCAT-AP CH mandatory field
+        # At least one distribution (data access point) must be provided
         [
             sh:path dcat:distribution ;
             sh:minCount 1 ;
             sh:node :shape-distribution ;
+            sh:message "VIOLATION: Dataset must have at least one distribution. Expected dcat:Distribution resources with access URLs and metadata." ;
         ],
+        # Issued date - dataset publication date (optional)
         [
             sh:path dcat:issued ;
             sh:maxCount 1 ;
             sh:datatype xsd:dateTime ;
+            sh:message "VIOLATION: If provided, issued date must be a single xsd:dateTime value indicating when the dataset was first published." ;
         ],
+        # Modified date - last update timestamp
         :property-modified,
+        # Theme constraint - OpenData.swiss categorization
+        # Datasets must be categorized using the Swiss DCAT-AP theme vocabulary
+        # This enables filtering and discovery by subject area
         [
             sh:path dcat:theme ;
             sh:in
@@ -104,24 +151,35 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
                     dcat-theme:administration
                     dcat-theme:national-economy
                 ) ;
+            sh:message "VIOLATION: If provided, theme must be from the Swiss DCAT-AP theme vocabulary (http://dcat-ap.ch/vocabulary/themes/). Valid themes include work, construction, population, education, energy, finances, geography, legislation, health, trade, industry, crime, culture, agriculture, mobility, politics, prices, territory, social-security, statistical-basis, tourism, administration, and national-economy." ;
         ],
+        # Landing page - human-readable dataset page URL
         [
             sh:path dcat:landingPage ;
         #sh:maxCount 1 ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, landing page must be a valid IRI pointing to a human-readable web page about the dataset." ;
         ],
+        # Related resources - links to related datasets or resources
         [
             sh:path dcterms:relation ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, related resources must be valid IRIs pointing to related datasets or documents." ;
         ],
+        # See also - additional reference links
         [
             sh:path rdfs:seeAlso ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, see also references must be valid IRIs pointing to related information." ;
         ],
+        # Spatial coverage - geographic area covered by the dataset
         [
             sh:path dcterms:coverage ;
-        # TODO
+            sh:message "INFO: Spatial coverage can be specified to indicate the geographic area covered by this dataset." ;
+        # TODO: Add specific constraints for spatial coverage (GeoNames, GeoJSON, etc.)
         ],
+        # Temporal coverage - time period covered by the data
+        # Requires both start and end dates in xsd:date format
         [
             sh:path dcterms:temporal ;
             sh:class dcat:PeriodOfTime ;
@@ -133,19 +191,26 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
                             sh:datatype xsd:date ;
                             sh:minCount 1 ;
                             sh:maxCount 1 ;
+                            sh:message "VIOLATION: Temporal coverage must have exactly one start date (schema:startDate) as xsd:date." ;
                         ],
                         [
                             sh:path schema:endDate ;
                             sh:datatype xsd:date ;
                             sh:minCount 1 ;
                             sh:maxCount 1 ;
+                            sh:message "VIOLATION: Temporal coverage must have exactly one end date (schema:endDate) as xsd:date." ;
                         ] ;
                 ] ;
+            sh:message "VIOLATION: If provided, temporal coverage must be a dcat:PeriodOfTime with both start and end dates." ;
         ],
+        # Keywords - multilingual tags for improved discoverability
         [
             sh:path dcat:keyword ;
             sh:languageIn ( "de" "fr" "it" "en" ) ;
+            sh:message "VIOLATION: If provided, keywords must have language tags from the Swiss national languages or English (de, fr, it, en)." ;
         ],
+        # Accrual periodicity - update frequency using EU controlled vocabulary
+        # Indicates how often the dataset is expected to be updated
         [
             sh:path dcat:accrualPeriodicity ;
             sh:maxCount 1 ;
@@ -183,44 +248,72 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
                     frequency:WEEKLY
                     frequency:ANNUAL
                 ) ;
+            sh:message "VIOLATION: If provided, accrual periodicity must be exactly one value from the EU frequency vocabulary (http://publications.europa.eu/resource/authority/frequency/). Common values include ANNUAL, MONTHLY, QUARTERLY, DAILY, WEEKLY, IRREG (irregular), CONT (continuous), NEVER, or UNKNOWN." ;
         ],
+        # Language - languages used in the dataset content
         :property-language .
 
+#
+# Contact Point Shape - vCard Validation
+#
+# Validates contact information for datasets.
+# Ensures that contact points have both a name and email address for reachability.
+#
 :shape-contactPoint
     sh:property
+        # Formatted name - contact display name
         [
             sh:path vcard:fn ;
             sh:minCount 1 ;
+            sh:message "VIOLATION: Contact point must have at least one formatted name (vcard:fn). Expected a string with the contact's display name." ;
         ],
+        # Email address - must be provided as mailto: IRI
         [
             sh:path vcard:hasEmail ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: Contact point must have at least one email address (vcard:hasEmail). Expected an IRI in mailto: format (e.g., mailto:contact@example.com)." ;
         ]
 .
 
+#
+# Distribution Shape - Data Access Point Validation
+#
+# Validates distributions (downloadable or accessible representations of the dataset).
+# Ensures compliance with DCAT-AP CH requirements for data access and licensing.
+#
 :shape-distribution
     sh:property
+        # Distribution identifier (optional)
         [
             sh:path dcterms:identifier ;
             sh:maxCount 1 ;
             sh:datatype xsd:string ;
+            sh:message "VIOLATION: If provided, distribution identifier must be a single xsd:string value." ;
         ],
+        # Access URL - mandatory landing page or service for accessing the distribution
         [
             sh:path dcat:accessURL ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: Distribution must have at least one access URL (dcat:accessURL). Expected a valid IRI where the distribution can be accessed (landing page, API endpoint, or download link)." ;
         ],
+        # Download URL - direct download link (optional, use if direct download available)
         [
             sh:path dcat:downloadURL ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, download URL must be a valid IRI pointing to a direct download of the distribution file." ;
         ],
+        # Issued date - when the distribution was first made available
         [
             sh:path dcat:issued ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:datatype xsd:dateTime ;
+            sh:message "VIOLATION: Distribution must have exactly one issued date (dcat:issued). Expected xsd:dateTime indicating when this distribution was first published." ;
         ],
+        # Rights - usage terms following Swiss open data licenses
+        # These are standardized rights statements used across OpenData.swiss
         [
             sh:path dcat:rights ;
             sh:minCount 1 ;
@@ -232,50 +325,81 @@ prefix : <https://cube.link/shape/profile-opendataswiss#>
                     "NonCommercialAllowed-CommercialWithPermission-ReferenceNotRequired"
                     "NonCommercialAllowed-CommercialWithPermission-ReferenceRequired"
                 ) ;
+            sh:message "VIOLATION: Distribution must have exactly one rights statement (dcat:rights). Expected one of the OpenData.swiss standard license strings: 'NonCommercialAllowed-CommercialAllowed-ReferenceNotRequired', 'NonCommercialAllowed-CommercialAllowed-ReferenceRequired', 'NonCommercialAllowed-CommercialWithPermission-ReferenceNotRequired', or 'NonCommercialAllowed-CommercialWithPermission-ReferenceRequired'." ;
         ],
+        # Media type - IANA media type (MIME type) of the distribution
         [
             sh:path dcat:mediaType ;
             sh:maxCount 1 ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, media type must be a single IRI from the IANA media types registry (e.g., http://www.iana.org/assignments/media-types/text/csv)." ;
         ],
+        # Format - file format specification (optional alternative to mediaType)
         [
             sh:path dcat:format ;
             sh:maxCount 1 ;
             sh:nodeKind sh:IRI ;
+            sh:message "VIOLATION: If provided, format must be a single IRI identifying the file format (e.g., from File Type Registry or similar)." ;
         ],
+        # Byte size - file size in bytes for download planning
         [
             sh:path dcat:byteSize ;
             sh:maxCount 1 ;
             sh:datatype xsd:decimal ;
+            sh:message "VIOLATION: If provided, byte size must be a single xsd:decimal value representing the distribution size in bytes." ;
         ],
+        # Modified date - last update timestamp
         :property-modified,
+        # Title and description - multilingual requirements
         :property-title,
         :property-description,
+        # Language - languages used in this distribution
         :property-language ;
 .
 
+#
+# Reusable Property Shapes
+#
+# These shapes are referenced by multiple parent shapes to ensure consistent
+# validation of common metadata properties.
+#
+
+# Title property - multilingual mandatory field
+# Requires at least one title in Swiss national languages or English
+# Each language can appear at most once (uniqueLang)
 :property-title
     sh:path dcterms:title ;
     sh:minCount 1 ;
     sh:languageIn ( "de" "fr" "it" "en" ) ;
     sh:uniqueLang true ;
+    sh:message "VIOLATION: Must have at least one title (dcterms:title) with a language tag from Swiss national languages or English (de, fr, it, en). Each language can appear at most once." ;
 .
 
+# Description property - multilingual mandatory field
+# Requires at least one description in Swiss national languages or English
+# Each language can appear at most once (uniqueLang)
 :property-description
     sh:path dcterms:description ;
     sh:minCount 1 ;
     sh:languageIn ( "de" "fr" "it" "en" ) ;
     sh:uniqueLang true ;
+    sh:message "VIOLATION: Must have at least one description (dcterms:description) with a language tag from Swiss national languages or English (de, fr, it, en). Each language can appear at most once." ;
 .
 
+# Modified date property - last modification timestamp
+# Optional but if provided must be a single dateTime value
 :property-modified
     sh:path dcterms:modified ;
     sh:maxCount 1 ;
     sh:datatype xsd:dateTime ;
+    sh:message "VIOLATION: If provided, modified date must be a single xsd:dateTime value indicating when the resource was last updated." ;
 .
 
+# Language property - ISO 639-1 two-letter language codes
+# Indicates the languages used in the resource content
 :property-language
     sh:path dcterms:language ;
     sh:minLength 2 ;
     sh:maxLength 2 ;
+    sh:message "VIOLATION: If provided, language codes must be exactly 2 characters (ISO 639-1 two-letter codes, e.g., 'de', 'fr', 'it', 'en')." ;
 .
