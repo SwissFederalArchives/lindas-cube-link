@@ -9,8 +9,14 @@
 @prefix code: <https://code.described.at/> .
 
 #
-# This is the bare minimal SHACL shape for validating a cube.
-# All cubes should pass this validation.
+# Standalone Cube Constraint - Standard Cube Profile
+#
+# This is the standard SHACL shape for validating RDF Data Cubes with minimal metadata.
+# All cubes should pass this validation to ensure they contain the minimum required
+# metadata properties and structure.
+#
+# This shape imports standalone-constraint-constraint which validates the cube's
+# observation constraints and dimensions.
 #
 
 [
@@ -18,40 +24,45 @@
     code:extension "ttl" ;
 ] .
 
+# Main cube shape - validates cube:Cube instances
 :CubeShape
     a sh:NodeShape ;
     sh:targetClass cube:Cube ;
+    # Cube name: must be either a plain string or language-tagged string
     sh:or
         (
             [
                 sh:path schema:name ;
                 sh:minCount 1 ;
                 sh:datatype xsd:string ;
-                sh:message "VIOLATION: cube:Cube needs a schema:name"
+                sh:message "VIOLATION: Every cube must have a schema:name property with xsd:string or rdf:langString datatype"
             ]
             [
                 sh:path schema:name ;
                 sh:minCount 1 ;
                 sh:datatype rdf:langString ;
-                sh:message "VIOLATION: cube:Cube needs a schema:name"
+                sh:message "VIOLATION: Every cube must have a schema:name property with xsd:string or rdf:langString datatype"
             ]
         ) ;
+    # Publisher: recommended but not mandatory
     sh:property
         [
             sh:severity sh:Warning ;
             sh:path schema:publisher ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
-            sh:message "WARNING: cube:Cube needs an schema:publisher"
+            sh:message "WARNING: Cubes should include a schema:publisher as an IRI reference"
         ] ;
+    # Creator: recommended but not mandatory
     sh:property
         [
             sh:severity sh:Warning ;
             sh:path schema:creator ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
-            sh:message "WARNING: cube:Cube needs an schema:creator"
+            sh:message "WARNING: Cubes should include a schema:creator as an IRI reference"
         ] ;
+    # Contact point: required, can be IRI or blank node with email and name
     sh:property
         [
             sh:path schema:contactPoint ;
@@ -66,41 +77,44 @@
                                 sh:path schema:email ;
                                 sh:minCount 1 ;
                                 sh:datatype xsd:string ;
-                                sh:message "VIOLATION: Contact point needs an email"
+                                sh:message "VIOLATION: Blank node contact point must have a schema:email with xsd:string datatype"
                             ],
                             [
                                 sh:path schema:name ;
                                 sh:minCount 1 ;
                                 sh:datatype xsd:string ;
-                                sh:message "VIOLATION: Contact point needs a name"
+                                sh:message "VIOLATION: Blank node contact point must have a schema:name with xsd:string datatype"
                             ]
                     ]
                 ) ;
-
-            sh:message "VIOLATION: cube:Cube needs a schema:contactpoint"
+            sh:message "VIOLATION: Every cube must have a schema:contactPoint as either an IRI or a blank node with email and name"
         ] ;
+    # Contributor: recommended but not mandatory
     sh:property
         [
             sh:severity sh:Warning ;
             sh:path schema:contributor ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
-            sh:message "WARNING: cube:Cube needs an schema:contributor"
+            sh:message "WARNING: Cubes should include a schema:contributor as an IRI reference"
         ] ;
+    # Creation date: required, must be xsd:date
     sh:property
         [
             sh:path schema:dateCreated ;
             sh:minCount 1 ;
             sh:datatype xsd:date ;
-            sh:message "VIOLATION: cube:Cube needs a valid schema:dateCreated"
+            sh:message "VIOLATION: Every cube must have a schema:dateCreated with xsd:date datatype"
         ] ;
+    # Publication date: required, must be xsd:date
     sh:property
         [
             sh:path schema:datePublished ;
             sh:minCount 1 ;
             sh:datatype xsd:date ;
-            sh:message "VIOLATION: cube:Cube needs a valid schema:datePublished"
+            sh:message "VIOLATION: Every cube must have a schema:datePublished with xsd:date datatype"
         ] ;
+    # Modification date: required, can be xsd:date or xsd:dateTime
     sh:property
         [
             sh:path schema:dateModified ;
@@ -109,24 +123,26 @@
                 [ sh:datatype xsd:dateTime ]
             ) ;
             sh:minCount 1 ;
-            sh:message "VIOLATION: cube:Cube needs a valid schema:dateModified"
+            sh:message "VIOLATION: Every cube must have a schema:dateModified with xsd:date or xsd:dateTime datatype"
         ] ;
+    # Observation set: recommended, references the set of observations
     sh:property
         [
             sh:severity sh:Warning ;
             sh:path cube:observationSet ;
             sh:minCount 1 ;
             sh:node :ObservationSetShape ;
-            sh:message "WARNING: cube:Cube needs an observationSet"
+            sh:message "WARNING: Cubes should include a cube:observationSet linking to observations"
         ] ;
+    # Observation constraint: optional, defines the structure and dimensions
     sh:property
         [
-        # optional, but recommended
             sh:path cube:observationConstraint ;
-            sh:message "VIOLATION: cube:Cube must point to a valid constraint"
+            sh:message "VIOLATION: If cube:observationConstraint is specified, it must reference a valid cube:Constraint"
         ]
 .
 
+# Observation set shape - validates cube:ObservationSet instances
 :ObservationSetShape
     a sh:NodeShape ;
     sh:targetClass cube:ObservationSet ;
@@ -136,10 +152,11 @@
             sh:path cube:observation ;
             sh:minCount 1 ;
             sh:node :ObservationShape ;
-            sh:message "WARNING: cube:Cube needs at least one observation"
+            sh:message "WARNING: Observation sets should contain at least one cube:observation"
         ] ;
 .
 
+# Observation shape - validates individual cube:Observation instances
 :ObservationShape
     a sh:NodeShape ;
     sh:targetClass cube:Observation ;
@@ -148,5 +165,5 @@
             sh:path cube:observedBy ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
-            sh:message "VIOLATION: cube:Observation requires cube:observedBy"
+            sh:message "VIOLATION: Every observation must have a cube:observedBy property referencing the cube as an IRI"
         ] .

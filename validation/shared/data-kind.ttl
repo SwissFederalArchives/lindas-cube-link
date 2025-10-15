@@ -5,35 +5,59 @@ PREFIX schema: <http://schema.org/>
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 prefix : <https://cube.link/shape/shared/data-kind#>
 
+#
+# Shared Data Kind Validation
+#
+# This module provides reusable SHACL shapes for validating meta:dataKind properties.
+# Data kinds describe the semantic type of dimension values beyond their technical datatype.
+#
+# Supported data kinds:
+# - time:GeneralDateTimeDescription: Temporal dimensions (dates, times, timestamps)
+# - schema:GeoShape: Geographic areas or regions
+# - schema:GeoCoordinates: Specific geographic points (latitude/longitude)
+#
+# These shapes are imported by profile-visualize.ttl and can be used by other profiles
+# that need to validate specialized dimension types.
+#
+
+# Main data kind validation - ensures proper type annotation
 :DataKind
     a sh:NodeShape ;
     sh:targetObjectsOf meta:dataKind ;
+    # Exactly one of the three supported data kinds must be used
     sh:xone ( :GeneralDateTimeDescription :GeoShape :GeoCoordinates ) ;
     sh:severity sh:Warning ;
-    sh:message "Data kind should be one of the following: GeneralDateTimeDescription, GeoShape, GeoCoordinates" ;
+    sh:message "WARNING: Data kind should be one of: time:GeneralDateTimeDescription (temporal), schema:GeoShape (geographic area), or schema:GeoCoordinates (geographic point)" ;
     sh:property
         [
+            # Require explicit type declaration
             sh:path rdf:type ;
             sh:minCount 1 ;
+            sh:message "WARNING: Data kind must have an rdf:type declaration" ;
         ]
 .
 
+# Geographic shape validation - for area-based geographic dimensions
 :GeoShape
     a sh:NodeShape ;
     sh:targetClass schema:GeoShape ;
     sh:class schema:GeoShape ;
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
+    sh:message "WARNING: schema:GeoShape data kind must only have type property (closed shape)" ;
 .
 
+# Geographic coordinates validation - for point-based geographic dimensions
 :GeoCoordinates
     a sh:NodeShape ;
     sh:targetClass schema:GeoCoordinates ;
     sh:class schema:GeoCoordinates ;
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
+    sh:message "WARNING: schema:GeoCoordinates data kind must only have type property (closed shape)" ;
 .
 
+# Temporal dimension validation - for date/time dimensions
 :GeneralDateTimeDescription
     a sh:NodeShape ;
     sh:targetClass time:GeneralDateTimeDescription ;
@@ -42,6 +66,8 @@ prefix : <https://cube.link/shape/shared/data-kind#>
     sh:ignoredProperties ( rdf:type ) ;
     sh:property
         [
+            # Optional unit type for temporal granularity
+            # E.g., time:unitYear for yearly data, time:unitMonth for monthly data
             sh:path time:unitType ;
             sh:maxCount 1 ;
             sh:in
@@ -49,5 +75,7 @@ prefix : <https://cube.link/shape/shared/data-kind#>
                     time:unitYear time:unitMonth time:unitDay time:unitHour time:unitMinute time:unitSecond
                     time:unitWeek
                 ) ;
+            sh:message "WARNING: If time:unitType is specified, it must be one of: unitYear, unitMonth, unitWeek, unitDay, unitHour, unitMinute, or unitSecond" ;
         ] ;
+    sh:message "WARNING: time:GeneralDateTimeDescription data kind must only have type and optional time:unitType properties (closed shape)" ;
 .

@@ -6,36 +6,67 @@ prefix code: <https://code.described.at/>
 prefix cube: <https://cube.link/>
 prefix : <https://cube.link/shape/profile-opendataswiss-lindas#>
 
+#
+# OpenData.swiss Lindas Profile
+#
+# This SHACL shape validates RDF Data Cubes published from LINDAS (Linked Data Service)
+# to OpenData.swiss. It extends the standalone-cube-constraint profile and adds specific
+# requirements for cubes published through the LINDAS platform.
+#
+# Key requirements:
+# - Must be a valid DCAT Dataset (dcat:Dataset)
+# - Must have a unique dcterms:identifier
+# - Must specify dcterms:creator (originating organization)
+# - Must be tagged for OpenData.swiss via schema:workExample
+# - Must have "Published" creative work status
+# - Cannot have expiration dates (must use Draft status instead)
+#
+# This profile ensures that LINDAS cubes meet OpenData.swiss publication requirements.
+#
+
+# Import base cube validation
 [
     code:imports <./standalone-cube-constraint> ;
     code:extension "ttl" ;
 ] .
 
+# LINDAS cube shape - validates cubes published from LINDAS to OpenData.swiss
 :CubeShape
     a sh:NodeShape ;
     sh:targetClass cube:Cube ;
+    # Must be a DCAT Dataset for OpenData.swiss
     sh:class dcat:Dataset ;
     sh:property
         [
+            # Unique identifier: exactly one dcterms:identifier required
             sh:path dcterms:identifier ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
+            sh:message "VIOLATION: LINDAS cubes must have exactly one dcterms:identifier" ;
         ],
         [
+            # Creator organization: identifies the originating organization
             sh:path dcterms:creator ;
             sh:minCount 1 ;
+            sh:message "VIOLATION: LINDAS cubes must specify at least one dcterms:creator (originating organization)" ;
         ],
         [
+            # Work example: tags this cube for OpenData.swiss
             sh:path schema:workExample ;
             sh:hasValue <https://ld.admin.ch/application/opendataswiss> ;
+            sh:message "VIOLATION: LINDAS cubes for OpenData.swiss must have schema:workExample set to https://ld.admin.ch/application/opendataswiss" ;
         ],
         [
+            # Publication status: must be "Published" for OpenData.swiss
             sh:path schema:creativeWorkStatus ;
             sh:hasValue <https://ld.admin.ch/vocabulary/CreativeWorkStatus/Published> ;
+            sh:message "VIOLATION: LINDAS cubes for OpenData.swiss must have schema:creativeWorkStatus set to Published" ;
         ],
         [
+            # Expiration check: cubes cannot have expiration dates
+            # Use Draft status instead to hide unpublished cubes
             sh:path [ sh:alternativePath ( schema:validThrough schema:expires ) ] ;
             sh:maxCount 0 ;
-            sh:message "VIOLATION: Cube cannot be expired" ;
+            sh:message "VIOLATION: LINDAS cubes cannot have schema:validThrough or schema:expires properties. Use Draft status to control visibility instead" ;
         ] ;
 .
