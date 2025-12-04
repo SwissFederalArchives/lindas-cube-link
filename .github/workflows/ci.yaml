@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DOCKER_IMAGE: ghcr.io/zazuko/cube-link
+      DOCKER_IMAGE: ghcr.io/swissfederalarchives/lindas-cube-link
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Replace draft status
         run: sed -i 's/"ZZ-DRAFT"/"ZZ-BASIC"/g' config.js meta/config.js relation/config.js

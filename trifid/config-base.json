@@ -22,7 +22,7 @@
     },
     "rendererFiles": {
       "path": "/",
-      "folder": "cwd:node_modules/trifid-renderer-simple/public"
+      "folder": "cwd:node_modules/lindas-trifid-entity-renderer/public"
     }
   },
   "mediaTypeUrl": {
@@ -54,7 +54,7 @@
   },
   "renderer": {
     "root": {
-      "module": "trifid-renderer-simple",
+      "module": "lindas-trifid-entity-renderer",
       "template": "trifid:views/index.html",
       "templateError": "trifid:views/error.html",
       "alternativeMediaTypes": [
@@ -77,11 +77,11 @@
   "plugins": {
     "templateEngine": {
       "priority": 10,
-      "module": "trifid-plugin-cotton-candy"
+      "module": "lindas-trifid-plugin-cotton-candy"
     },
     "requestLogger": {
       "priority": 20,
-      "module": "trifid-core:./plugins/middleware",
+      "module": "lindas-trifid-core:./plugins/middleware",
       "middleware": "morgan",
       "params": [
         "combined"
@@ -89,62 +89,62 @@
     },
     "patchHeaders": {
       "priority": 40,
-      "module": "trifid-core:./plugins/middleware",
+      "module": "lindas-trifid-core:./plugins/middleware",
       "middleware": "patch-headers"
     },
     "redirects": {
       "priority": 50,
-      "module": "trifid-core:./plugins/redirects"
+      "module": "lindas-trifid-core:./plugins/redirects"
     },
     "staticFiles": {
       "priority": 60,
-      "module": "trifid-core:./plugins/static-files"
+      "module": "lindas-trifid-core:./plugins/static-files"
     },
     "mediaTypeUrl": {
       "priority": 70,
-      "module": "trifid-core:./plugins/middleware",
+      "module": "lindas-trifid-core:./plugins/middleware",
       "middleware": "format-to-accept"
     },
     "rewrite": {
       "priority": 80,
-      "module": "trifid-core:./plugins/middleware",
+      "module": "lindas-trifid-core:./plugins/middleware",
       "middleware": "camouflage-rewrite"
     },
     "iri": {
       "priority": 90,
-      "module": "trifid-core:./plugins/iri"
+      "module": "lindas-trifid-core:./plugins/iri"
     },
     "locals": {
       "priority": 100,
-      "module": "trifid-core:./plugins/locals"
+      "module": "lindas-trifid-core:./plugins/locals"
     },
     "markdown": {
       "priority": 110,
-      "module": "trifid-plugin-markdown"
+      "module": "lindas-trifid-plugin-markdown"
     },
     "staticViews": {
       "priority": 120,
-      "module": "trifid-core:./plugins/static-views"
+      "module": "lindas-trifid-core:./plugins/static-views"
     },
     "renderer": {
       "priority": 130,
-      "module": "trifid-plugin-renderer"
+      "module": "lindas-trifid-plugin-renderer"
     },
     "hydraBox": {
       "priority": 140,
-      "module": "trifid-plugin-hydra-box"
+      "module": "lindas-trifid-plugin-hydra-box"
     },
     "handler": {
       "priority": 150,
-      "module": "trifid-core:./plugins/handler"
+      "module": "lindas-trifid-core:./plugins/handler"
     },
     "headers-fix": {
       "priority": 160,
-      "module": "trifid-core:./plugins/headers-fix"
+      "module": "lindas-trifid-core:./plugins/headers-fix"
     },
     "error-handler": {
       "priority": 170,
-      "module": "trifid-core:./plugins/error-handler"
+      "module": "lindas-trifid-core:./plugins/error-handler"
     }
   }
 }

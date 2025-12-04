@@ -32,7 +32,7 @@ for file in "$SCRIPT_PATH"/observations/*.ttl; do
     fi
 
     name=$(basename "$file")
-    report=$(npx barnard59 cube check-observations --constraint "$file" < "$file" 2> "$file.log" | "$SHACL_TEST_PATH"/pretty-print.js --prefixes schema cube=https://cube.link/)
+    report=$(npx lindas-barnard59 cube check-observations --constraint "$file" < "$file" 2> "$file.log" | "$SHACL_TEST_PATH"/pretty-print.js --prefixes schema cube=https://cube.link/)
 
     if ! echo "$report" | npx approvals "$name" --outdir "$SCRIPT_PATH"/observations "$approvalsFlags" > /dev/null 2>&1 ; then
       "$SHACL_TEST_PATH"/report-failure.sh "$file" "$(cat "$file")" "$(cat "$file")" "check results"

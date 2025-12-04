@@ -9,7 +9,7 @@ const { fetchBuilder, MemoryCache } = require('node-fetch-cache')
  */
 const factory = () => {
   const cachedFetch = fetchBuilder.withCache(new MemoryCache({
-    ttl: 60 * 60 * 1000, // 1 hour
+    ttl: 60 * 60 * 1000 // 1 hour
   }))
 
   return async (req, res, next) => {
@@ -39,7 +39,7 @@ const factory = () => {
 
       const { version, ref, shapePath } = versionMatch?.groups || {}
       if (!version && !ref) {
-        const tags = await cachedFetch('https://api.github.com/repos/zazuko/cube-link/tags').then(async (res) => {
+        const tags = await cachedFetch('https://api.github.com/repos/SwissFederalArchives/lindas-cube-link/tags').then(async (res) => {
           if (!res.ok) {
             await res.ejectFromCache()
           }
@@ -61,7 +61,7 @@ const factory = () => {
       }
 
       try {
-        const rawGithub = await fetch(`https://raw.githubusercontent.com/zazuko/cube-link/${versionPath}/validation/${shapePath}.ttl`)
+        const rawGithub = await fetch(`https://raw.githubusercontent.com/SwissFederalArchives/lindas-cube-link/${versionPath}/validation/${shapePath}.ttl`)
         if (rawGithub.ok) {
           res.set('Content-Type', 'text/turtle')
         } else {

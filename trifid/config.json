@@ -2,7 +2,7 @@
   "baseConfig": "cwd:trifid/config-base.json",
   "handler": {
     "root": {
-      "module": "trifid-handler-fetch",
+      "module": "lindas-trifid-handler-fetch",
       "options": {
         "resource": "https://cube.link/",
         "url": "cwd:vocab.ttl",
@@ -12,7 +12,7 @@
     },
     "meta": {
       "path": "/meta/",
-      "module": "trifid-handler-fetch",
+      "module": "lindas-trifid-handler-fetch",
       "options": {
         "resource": "https://cube.link/meta/",
         "url": "cwd:meta/meta.ttl",
@@ -22,7 +22,7 @@
     },
     "relation": {
       "path": "/relation/",
-      "module": "trifid-handler-fetch",
+      "module": "lindas-trifid-handler-fetch",
       "options": {
         "resource": "https://cube.link/relation/",
         "url": "cwd:relation/relation.ttl",
@@ -35,7 +35,7 @@
     "root": null,
     "meta": {
       "path": "/meta/",
-      "module": "trifid-renderer-simple",
+      "module": "lindas-trifid-entity-renderer",
       "template": "cwd:dist/meta.html",
       "templateError": "trifid:views/error.html",
       "alternativeMediaTypes": [
@@ -47,7 +47,7 @@
     },
     "relation": {
       "path": "/relation/",
-      "module": "trifid-renderer-simple",
+      "module": "lindas-trifid-entity-renderer",
       "template": "cwd:dist/relation.html",
       "templateError": "trifid:views/error.html",
       "alternativeMediaTypes": [
@@ -58,7 +58,7 @@
       ]
     },
     "cube": {
-      "module": "trifid-renderer-simple",
+      "module": "lindas-trifid-entity-renderer",
       "template": "cwd:dist/cube.html",
       "templateError": "trifid:views/error.html",
       "alternativeMediaTypes": [
@@ -81,7 +81,7 @@
   "plugins": {
     "vocab-redirect": {
       "priority": 55,
-      "module": "trifid-core:./plugins/middleware",
+      "module": "lindas-trifid-core:./plugins/middleware",
       "middleware": "cwd:trifid/redirect.cjs"
     }
   }
