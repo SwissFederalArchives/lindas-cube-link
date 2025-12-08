@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "@zazuko/shacl-test": "^0.1",
     "approvals": "^6.2.2",
     "lindas-barnard59": "^6.0.2",
     "lindas-barnard59-base": "^3.0.2",
@@ -59,6 +58,7 @@
     "pm2": "^6.0.14",
     "respec": "^35.0.0",
     "serve": "^14.2.4",
-    "standard": "^17.1.0"
+    "standard": "^17.1.0",
+    "@lindas/shacl-test": "^1.0.0"
   }
 }
