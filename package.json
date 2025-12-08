@@ -59,6 +59,6 @@
     "respec": "^35.0.0",
     "serve": "^14.2.4",
     "standard": "^17.1.0",
-    "@lindas/shacl-test": "^1.0.0"
+    "@lindas/shacl-test": "^0.1.1"
   }
 }
