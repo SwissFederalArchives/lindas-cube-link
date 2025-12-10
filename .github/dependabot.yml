@@ -1,6 +1,28 @@
+# Documentation: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 version: 2
 updates:
+  # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # Maintain dependencies for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      lindas:
+        patterns:
+          - "@lindas/*"
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "standard"
+      testing:
+        patterns:
+          - "mocha"
+          - "chai"
+          - "approvals"
