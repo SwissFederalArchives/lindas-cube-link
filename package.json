@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "@lindas/barnard59": "^6.0.6",
+    "@lindas/barnard59": "^6.0.8",
     "@lindas/barnard59-base": "^3.0.2",
     "@lindas/barnard59-cube": "^2.0.3",
     "@lindas/barnard59-formats": "^5.0.2",
