@@ -34,7 +34,7 @@ for file in "$SCRIPT_PATH"/observations/*.ttl; do
     name=$(basename "$file")
     report=$(npx lindas-barnard59 cube check-observations --constraint "$file" < "$file" 2> "$file.log" | node "$SHACL_TEST_PATH"/pretty-print.js --prefixes schema cube=https://cube.link/)
 
-    if ! echo "$report" | npx approvals "$name" --outdir "$SCRIPT_PATH"/observations "$approvalsFlags" > /dev/null 2>&1 ; then
+    if ! echo "$report" | npx approvals "$name" --outdir "$SCRIPT_PATH"/observations $approvalsFlags > /dev/null 2>&1 ; then
       bash "$SHACL_TEST_PATH"/report-failure.sh "$file" "$(cat "$file")" "$(cat "$file")" "check results"
       FAILED=1
     else
