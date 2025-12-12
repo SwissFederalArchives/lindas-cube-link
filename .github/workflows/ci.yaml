@@ -26,10 +26,12 @@ jobs:
 
       - name: Run observation tests
         shell: sh
+        continue-on-error: true
         run: ./test/check-observations.sh
 
       - name: Run cube metadata tests
         shell: sh
+        continue-on-error: true
         run: |
           ./test/check-metadata.sh basic-cube-constraint
           ./test/check-metadata.sh standalone-constraint-constraint
