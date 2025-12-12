@@ -25,19 +25,15 @@ jobs:
         run: npm ci
 
       - name: Run observation tests
-        shell: sh
-        continue-on-error: true
-        run: ./test/check-observations.sh
+        run: npm run test:observations
 
       - name: Run cube metadata tests
-        shell: sh
-        continue-on-error: true
         run: |
-          ./test/check-metadata.sh basic-cube-constraint
-          ./test/check-metadata.sh standalone-constraint-constraint
-          ./test/check-metadata.sh profile-visualize
-          ./test/check-metadata.sh profile-opendataswiss
-          ./test/check-metadata.sh profile-opendataswiss-lindas
+          npm run test:basic-cube-constraint
+          npm run test:standalone-constraint-constraint
+          npm run test:profile-visualize
+          npm run test:profile-opendataswiss
+          npm run test:profile-opendataswiss-lindas
 
   docker:
     needs: test
