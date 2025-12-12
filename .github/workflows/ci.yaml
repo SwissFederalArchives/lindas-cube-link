@@ -8,7 +8,37 @@ on:
       - "v*.*.*"
 
 jobs:
+  # Run tests first - Docker build will only run if tests pass
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run observation tests
+        shell: sh
+        run: ./test/check-observations.sh
+
+      - name: Run cube metadata tests
+        shell: sh
+        run: |
+          ./test/check-metadata.sh basic-cube-constraint
+          ./test/check-metadata.sh standalone-constraint-constraint
+          ./test/check-metadata.sh profile-visualize
+          ./test/check-metadata.sh profile-opendataswiss
+          ./test/check-metadata.sh profile-opendataswiss-lindas
+
   docker:
+    needs: test
     runs-on: ubuntu-latest
 
     env:
