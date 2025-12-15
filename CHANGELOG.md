@@ -1,4 +1,54 @@
-# cube-link
+# lindas-cube-link Changelog
+
+**Repository:** SwissFederalArchives/lindas-cube-link
+**Description:** LINDAS Cube Link - Library for linking and validating RDF Data Cubes
+
+---
+
+## LINDAS Development (December 2025)
+
+### 2025-12-12
+
+**`a528081` - Replace barnard59-based tests with direct SHACL validation**
+- Replaced pipeline-based tests with direct SHACL validation
+- Improved test reliability and performance
+
+**`f27d9ed` - Add continue-on-error to test steps in CI workflow**
+- Made test failures non-blocking in CI
+
+**`dfa7f19` - Make Docker build depend on tests passing**
+- Added test dependency to Docker build step
+
+### 2025-12-11
+
+**`56e1d97` - Update package-lock.json for barnard59-shacl 2.0.9 stream fix**
+- Updated for stream flushing fix
+
+**`4d01e0a` - Update package-lock.json for barnard59-shacl 2.0.8 Transform stream fix**
+- Updated for Transform stream fix
+
+**`c76fd90` - Update dependencies to @lindas/barnard59@6.0.9 with clean CLI**
+- Updated to latest barnard59 with clean CLI output
+
+**`959b63b` - Update @lindas/shacl-test to 0.1.7 for Linux compatibility**
+- Fixed Linux compatibility issues
+
+**`ff41fb6` - Fix security vulnerabilities by replacing vulnerable xlsx dependency**
+- **Security Fix:** Replaced vulnerable xlsx library
+- Fixed Prototype Pollution (GHSA-4r6h-8v6p-xvw6)
+- Fixed ReDoS vulnerability (GHSA-5pgg-2g8v-p4x9)
+
+### 2025-12-10
+
+**`ec2aff5` - Add npm ecosystem to Dependabot configuration**
+- Enabled automated dependency updates
+
+**`22d9b75` - Regenerate package-lock.json with @lindas scoped packages**
+- Migrated to @lindas scoped packages
+
+---
+
+## Original Releases
 
 ## 0.2.3
 
@@ -86,3 +136,7 @@
 ### Patch Changes
 
 - a38baff: Fixes the problem that validation script did not correctly target cube observations
+
+---
+
+*Last updated: 2025-12-15*
