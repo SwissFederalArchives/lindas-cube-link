@@ -2,10 +2,15 @@ name: Build and push Docker image
 
 on:
   push:
-    branches-ignore:
-      - "dependabot/**/*"
+    branches:
+      - main
+      - develop
     tags:
       - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
   # Run tests first - Docker build will only run if tests pass
