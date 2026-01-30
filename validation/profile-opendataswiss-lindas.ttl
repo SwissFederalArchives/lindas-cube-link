@@ -7,8 +7,7 @@ prefix cube: <https://cube.link/>
 prefix : <https://cube.link/shape/profile-opendataswiss-lindas#>
 
 [
-    code:imports <./standalone-cube-constraint> ;
-    code:extension "ttl" ;
+    code:imports <./standalone-cube-constraint.ttl> ;
 ] .
 
 :CubeShape

@@ -15,8 +15,7 @@ prefix frequency: <http://publications.europa.eu/resource/authority/frequency/>
 prefix : <https://cube.link/shape/profile-opendataswiss#>
 
 [
-    code:imports <./standalone-cube-constraint> ;
-    code:extension "ttl" ;
+    code:imports <./standalone-cube-constraint.ttl> ;
 ] .
 
 :CubeShape

@@ -14,8 +14,7 @@
 #
 
 [
-    code:imports <./standalone-constraint-constraint> ;
-    code:extension "ttl" ;
+    code:imports <./standalone-constraint-constraint.ttl> ;
 ] .
 
 :CubeShape
