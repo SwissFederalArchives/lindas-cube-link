@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy (e.g., develop, sha-abc1234, v1.0.0)'
+        description: 'Version to deploy (e.g., main, sha-abc1234, v1.0.0)'
         required: true
         type: string
 
