@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - main
-      - develop
     tags:
       - "v*.*.*"
   pull_request:
     branches:
       - main
-      - develop
 
 jobs:
   # Run tests first - Docker build will only run if tests pass
