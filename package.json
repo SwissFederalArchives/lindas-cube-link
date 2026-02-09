@@ -57,7 +57,7 @@
     "@lindas/barnard59-http": "^3.0.2",
     "@lindas/barnard59-sparql": "^3.0.2",
     "@lindas/shacl-test": "^0.1.7",
-    "approvals": "^6.2.2",
+    "approvals": "^7.3.0",
     "n3": "^1.17.2",
     "npm-run-all": "^4.1.5",
     "pm2": "^6.0.14",
